@@ -1,12 +1,12 @@
 #include "BaseDevice.h"
 #include "LDR.h"
 
-BaseDevice bd("PORTGAS D. ACE", "monkeydluffy232", "http://192.168.1.12:8080");
-LDR l1(A0, 10000);
+BaseDevice bd("Prasenna", "nobelprize123", "http://192.168.1.12:8080");
+Sensor* l1 = new LDR(A0, 10000);
 
 void setup() {
   bd.connectToWiFi();
-  bd.addSensor();
+  bd.addSensor(l1);
 }
 
 void loop() {

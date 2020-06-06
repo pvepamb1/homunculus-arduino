@@ -88,9 +88,11 @@ void BaseDevice::sendPulse(){
 }
 
 void BaseDevice::handleSensors(){
-  //loop through every sensor's execute method
+  for(Sensor* s: vec){
+      s->execute();
+    }
 }
 
-void BaseDevice::addSensor(){
-  //register a sensor
+void BaseDevice::addSensor(Sensor* sensor){
+  vec.push_back(sensor);
 }

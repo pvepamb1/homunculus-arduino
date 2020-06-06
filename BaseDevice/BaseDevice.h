@@ -7,6 +7,8 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include<ArduinoJson.h>
+#include "Sensor.h"
+#include <vector>
 
 class BaseDevice{
   
@@ -15,17 +17,18 @@ class BaseDevice{
         const char* password;
         String serverIp;
         unsigned long pulseDelay = 0;
+        std::vector<Sensor*> vec;
         
   public:
         ESP8266WebServer* server;
         BaseDevice(const char* ssid, const char* password, String serverIp);
         void heartbeat();
         void connectToWiFi();
-        String eepromRead();
-        void eepromWrite();
+        static String eepromRead();
+        static void eepromWrite();
         void sendPulse();
         void handleSensors();
-        void addSensor();
+        void addSensor(Sensor* sensor);
 };
 
 #endif
