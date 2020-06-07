@@ -1,7 +1,7 @@
 #include "BaseDevice.h"
 #include "LDR.h"
 
-BaseDevice bd("Prasenna", "nobelprize123", "http://192.168.1.12:8080");
+BaseDevice bd("SSID", "Password", "ServerUrl:Port");
 Sensor* l1 = new LDR(&bd, 1, A0, 10000);
 
 void setup() {

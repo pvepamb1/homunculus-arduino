@@ -7,6 +7,7 @@ BaseDevice::BaseDevice(const char* ssid, const char* password, String serverIp){
   this->ssid = ssid;
   this->password = password;
   this->serverIp = serverIp;
+  server->on("/", std::bind(&BaseDevice::handleRoot, this));
   server->begin();
   Serial.println("HTTP server started");
   }
@@ -104,6 +105,10 @@ void BaseDevice::sendValue(char* value){
   else {
     connectToWiFi();
   }
+}
+
+void BaseDevice::handleRoot(){
+    server->send(200, "text/html", String("Up!"));
 }
 
 void BaseDevice::handleSensors(){

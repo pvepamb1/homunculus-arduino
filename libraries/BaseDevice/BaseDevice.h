@@ -27,6 +27,7 @@ class BaseDevice{
         void connectToWiFi();
         void sendPulse();
         void sendValue(char* value);
+        void handleRoot();
         void handleSensors();
         void addSensor(Sensor* sensor);
 };
