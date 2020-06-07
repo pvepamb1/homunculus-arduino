@@ -7,6 +7,9 @@ LDR::LDR(BaseDevice* bd, int id, int pin, int sensorDelay){
   previousMillis = 0;
   this->bd = bd;
   this->id = id;
+  this->currentState = 'N';
+  this->maxThreshold = 600;
+  this->minThreshold = 200;
 }
 
 void LDR::execute(){
@@ -15,16 +18,16 @@ void LDR::execute(){
     int value = analogRead(sensorPin);
     Serial.println(value);
     if (value > 600) {
-      Serial.println("Sending value");
-      bd->sendValue(toJson(value));
       Serial.println("Updating state to ON");
-      //eepromStateWrite('N');
-    }
-    else if (value < 200 /*&& eepromStateRead() == 'N'*/) {
+      currentState = 'Y';
       Serial.println("Sending value");
       bd->sendValue(toJson(value));
+    }
+    else if (value < 200 && currentState == 'Y') {
       Serial.println("Updating state to OFF");
-      //eepromStateWrite('F');
+      currentState = 'N';
+      Serial.println("Sending value");
+      bd->sendValue(toJson(value));
     }
   }
 }

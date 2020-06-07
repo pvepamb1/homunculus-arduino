@@ -10,7 +10,10 @@ private:
         int sensorPin;
         int previousMillis;
         int sensorDelay; //in mills
+        char currentState;
         BaseDevice* bd;
+        int maxThreshold;
+        int minThreshold;
 public:
         LDR(BaseDevice* bd, int id, int pin, int sensorDelay);
         void execute();
