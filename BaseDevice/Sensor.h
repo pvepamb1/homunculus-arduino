@@ -3,6 +3,7 @@
 
 class Sensor {
 public:
+        int id = 0;
         Sensor();
         virtual void execute()= 0;
 };

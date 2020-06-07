@@ -3,15 +3,18 @@
  
 #include <Arduino.h>
 #include "Sensor.h"
+#include "BaseDevice.h"
  
 class LDR : public Sensor {
 private:
         int sensorPin;
         int previousMillis;
         int sensorDelay; //in mills
+        BaseDevice* bd;
 public:
-        LDR(int pin, int Sensordelay);
+        LDR(BaseDevice* bd, int id, int pin, int sensorDelay);
         void execute();
+        char* toJson(int value);
 };
  
 #endif

@@ -28,33 +28,9 @@ void BaseDevice::connectToWiFi(){
 void BaseDevice::heartbeat(){
   if((millis() - pulseDelay) >= 10000){
     pulseDelay = millis();
-    if(eepromRead() != WiFi.localIP().toString()){
-      eepromWrite();
-    }
    Serial.println("sending pulse");
   sendPulse();
   }
-}
-
-String BaseDevice::eepromRead(){
-  String ip;
-  int len = EEPROM.read(0);
-  for(int i = 1; i<=len; i++){
-    char c = EEPROM.read(i);
-    ip += String(c);
-  }
-  Serial.println("Stored IP: " +ip);
-  return ip;
-}
-
-void BaseDevice::eepromWrite(){
-  String ip = WiFi.localIP().toString();
-  EEPROM.write(0, ip.length());
-  for(int i=0; i<ip.length(); i++){
-    EEPROM.write(i+1, ip[i]);
-  }
-  EEPROM.commit();
-  Serial.println("updated IP: " +ip);
 }
 
 void BaseDevice::sendPulse(){
@@ -75,14 +51,57 @@ void BaseDevice::sendPulse(){
         if(httpCode == HTTP_CODE_OK) {
           String payload = http.getString();
           Serial.println(payload);
+          retryPulseCount = 0;
         }
       }
       else {
         Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
+        if(retryPulseCount < 10){
+        Serial.printf("Retrying..");
+        retryPulseCount++;
+        sendPulse();
+        }
+      else{
+        Serial.printf("Max retry count reached");
+        retryPulseCount = 0;
+        }
       }
     http.end();
   }
   else{
+    connectToWiFi();
+  }
+}
+
+void BaseDevice::sendValue(char* value){
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverIp + "/api/sensors");
+    http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST(value);
+    if (httpCode > 0) {
+      Serial.printf("HTTP code: %d\n", httpCode);
+      if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+        Serial.println(payload);
+        retryValueCount = 0;
+      }
+    }
+    else {
+      Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
+      if(retryValueCount < 10){
+        Serial.printf("Retrying..");
+        retryValueCount++;
+        sendValue(value);
+        }
+      else{
+        Serial.printf("Max retry count reached");
+        retryValueCount = 0;
+        }
+    }
+    http.end();
+  }
+  else {
     connectToWiFi();
   }
 }
