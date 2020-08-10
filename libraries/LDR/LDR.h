@@ -8,16 +8,18 @@
 class LDR : public Sensor {
 private:
         int sensorPin;
-        int previousMillis;
-        int sensorDelay; //in mills
+        unsigned long previousMillis;
+        unsigned long sensorDelay; //in mills
         char currentState;
         BaseDevice* bd;
         int maxThreshold;
         int minThreshold;
 public:
-        LDR(BaseDevice* bd, int id, int pin, int sensorDelay);
+        LDR(BaseDevice* bd, int id, int pin);
         void execute();
+        void setConfig(JsonObject& doc);
         char* toJson(int value);
+        String handleRoot();
 };
  
 #endif

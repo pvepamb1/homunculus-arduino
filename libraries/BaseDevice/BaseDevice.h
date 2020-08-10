@@ -15,7 +15,8 @@ class BaseDevice{
         const char* ssid;
         const char* password;
         String serverIp;
-        unsigned long pulseDelay = 0;
+        unsigned long previousMillis = 0;
+        unsigned long heartbeatDelay = 10000;
         std::vector<Sensor*> vec;
         int retryPulseCount = 0;
         int retryValueCount = 0;
@@ -30,6 +31,7 @@ class BaseDevice{
         void handleRoot();
         void handleSensors();
         void addSensor(Sensor* sensor);
+        void getConfig();
 };
 
 #endif

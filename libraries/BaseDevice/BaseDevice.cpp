@@ -27,10 +27,10 @@ void BaseDevice::connectToWiFi(){
   }
 
 void BaseDevice::heartbeat(){
-  if((millis() - pulseDelay) >= 10000){
-    pulseDelay = millis();
-   Serial.println("sending pulse");
-  sendPulse();
+  if((millis() - previousMillis) >= heartbeatDelay){
+    previousMillis = millis();
+    Serial.println("sending pulse");
+    sendPulse();
   }
 }
 
@@ -40,7 +40,7 @@ void BaseDevice::sendPulse(){
     Serial.println("sending to: " +serverIp + "/api/heartbeat");
     http.begin(serverIp + "/api/heartbeat");
     http.addHeader("Content-Type", "application/json");
-    const int capacity = JSON_OBJECT_SIZE(2);
+    const int capacity = JSON_OBJECT_SIZE(2) + 37;
     StaticJsonDocument<capacity> doc;
     doc["mac"]=WiFi.macAddress();
     doc["ip"]=WiFi.localIP().toString();
@@ -105,6 +105,62 @@ void BaseDevice::sendValue(char* value){
   else {
     connectToWiFi();
   }
+}
+
+void BaseDevice::getConfig(){
+
+  const size_t capacity = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(3) + 37;
+  DynamicJsonDocument doc(capacity);
+
+  doc["mac"] = WiFi.macAddress();
+  doc["ip"] = WiFi.localIP().toString();
+  JsonArray ids = doc.createNestedArray("ids");
+  ids.add("1");
+
+  char output[128];
+  serializeJson(doc, output);
+  int httpCode = 0;
+
+  do{
+    if(WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      Serial.println("sending to: " +serverIp + "/api/sensors/config");
+      http.begin(serverIp + "/api/sensors/config");
+      http.addHeader("Content-Type", "application/json");
+
+      Serial.print(output);
+
+      httpCode = http.POST(output);
+      if(httpCode > 0) {
+        Serial.printf("HTTP code: %d\n", httpCode);
+        if(httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
+          Serial.println(payload);
+          const size_t capacity2 = JSON_ARRAY_SIZE(2) + 2*JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(5) + 140; //needs to be abstracted
+          DynamicJsonDocument doc2(capacity2);
+          deserializeJson(doc2, payload);
+          JsonArray arr = doc2.as<JsonArray>();
+          for(Sensor* s: vec){
+            for (JsonObject value : arr) {
+              if(s->id == atoi(value["id"]["id"]))
+                s->setConfig(value);
+            }
+          }
+        }
+      }
+      else {
+        Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
+      }
+      
+      http.end();
+    }
+    else{
+        connectToWiFi();
+    }
+    if(httpCode != HTTP_CODE_OK){
+          delay(10000);
+      }
+  }while (httpCode != HTTP_CODE_OK);
 }
 
 void BaseDevice::handleRoot(){

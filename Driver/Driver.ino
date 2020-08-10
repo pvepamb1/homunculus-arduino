@@ -1,12 +1,13 @@
 #include "BaseDevice.h"
 #include "LDR.h"
 
-BaseDevice bd("SSID", "Password", "ServerUrl:Port");
-Sensor* l1 = new LDR(&bd, 1, A0, 10000);
+BaseDevice bd("Virus_stay_away", "Umich@2018", "http://10.0.0.208:8080");
+Sensor* l1 = new LDR(&bd, 1, A0);
 
 void setup() {
   bd.connectToWiFi();
   bd.addSensor(l1);
+  bd.getConfig();
 }
 
 void loop() {

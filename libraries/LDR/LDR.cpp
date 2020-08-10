@@ -1,9 +1,9 @@
 #include "LDR.h"
 
-LDR::LDR(BaseDevice* bd, int id, int pin, int sensorDelay){
+LDR::LDR(BaseDevice* bd, int id, int pin){
   
   sensorPin = pin;     
-  this->sensorDelay = sensorDelay;
+  this->sensorDelay = 10000;
   previousMillis = 0;
   this->bd = bd;
   this->id = id;
@@ -32,6 +32,19 @@ void LDR::execute(){
   }
 }
 
+void LDR::setConfig(JsonObject& doc){
+  //JsonObject root_0 = doc[0];
+
+  const char* root_0_id_id = doc["id"]["id"]; // "1"
+
+  int root_0_minThreshold = doc["minThreshold"]; // 200
+  int root_0_maxThreshold = doc["maxThreshold"]; // 600
+  const char* root_0_currentState = doc["currentState"]; // "N"
+  int root_0_sensorDelay = doc["sensorDelay"]; // 10000
+
+  Serial.println(root_0_minThreshold);
+}
+
 char* LDR::toJson(int value){
    const int capacity = JSON_OBJECT_SIZE(3);
    StaticJsonDocument<capacity> doc;
@@ -41,4 +54,8 @@ char* LDR::toJson(int value){
    char output[128];
    serializeJson(doc, output);
    return output;
+}
+
+String LDR::handleRoot(){
+  return "yes";
 }
