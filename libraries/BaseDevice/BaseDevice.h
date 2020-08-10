@@ -29,6 +29,7 @@ class BaseDevice{
         void sendPulse();
         void sendValue(char* value);
         void handleRoot();
+        void handleReset();
         void handleSensors();
         void addSensor(Sensor* sensor);
         void getConfig();

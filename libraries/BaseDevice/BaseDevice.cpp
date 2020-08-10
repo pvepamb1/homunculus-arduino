@@ -1,5 +1,7 @@
 #include "BaseDevice.h"
 
+void(* resetFunc) (void) = 0;
+
 BaseDevice::BaseDevice(const char* ssid, const char* password, String serverIp){
 
   Serial.begin(9600);
@@ -8,6 +10,7 @@ BaseDevice::BaseDevice(const char* ssid, const char* password, String serverIp){
   this->password = password;
   this->serverIp = serverIp;
   server->on("/", std::bind(&BaseDevice::handleRoot, this));
+  server->on("/reset", std::bind(&BaseDevice::handleReset, this));
   server->begin();
   Serial.println("HTTP server started");
   }
@@ -115,7 +118,10 @@ void BaseDevice::getConfig(){
   doc["mac"] = WiFi.macAddress();
   doc["ip"] = WiFi.localIP().toString();
   JsonArray ids = doc.createNestedArray("ids");
-  ids.add("1");
+  
+  for(Sensor* s: vec){
+    ids.add(s->id);
+  }
 
   char output[128];
   serializeJson(doc, output);
@@ -165,6 +171,12 @@ void BaseDevice::getConfig(){
 
 void BaseDevice::handleRoot(){
     server->send(200, "text/html", String("Up!"));
+}
+
+void BaseDevice::handleReset(){
+    server->send(200, "text/html", String("Resetting..."));
+    delay(2000);
+    resetFunc();
 }
 
 void BaseDevice::handleSensors(){

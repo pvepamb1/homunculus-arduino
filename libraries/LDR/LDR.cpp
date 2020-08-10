@@ -33,16 +33,13 @@ void LDR::execute(){
 }
 
 void LDR::setConfig(JsonObject& doc){
-  //JsonObject root_0 = doc[0];
 
-  const char* root_0_id_id = doc["id"]["id"]; // "1"
+  this->minThreshold = doc["minThreshold"]; // 200
+  this->maxThreshold = doc["maxThreshold"]; // 600
+  this->currentState = doc["currentState"]; // "N"
+  this->sensorDelay = doc["sensorDelay"]; // 10000
 
-  int root_0_minThreshold = doc["minThreshold"]; // 200
-  int root_0_maxThreshold = doc["maxThreshold"]; // 600
-  const char* root_0_currentState = doc["currentState"]; // "N"
-  int root_0_sensorDelay = doc["sensorDelay"]; // 10000
-
-  Serial.println(root_0_minThreshold);
+  Serial.println(minThreshold);
 }
 
 char* LDR::toJson(int value){
