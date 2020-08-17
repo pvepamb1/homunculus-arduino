@@ -33,13 +33,10 @@ void LDR::execute(){
 }
 
 void LDR::setConfig(JsonObject& doc){
-
   this->minThreshold = doc["minThreshold"]; // 200
   this->maxThreshold = doc["maxThreshold"]; // 600
   this->currentState = doc["currentState"]; // "N"
   this->sensorDelay = doc["sensorDelay"]; // 10000
-
-  Serial.println(minThreshold);
 }
 
 char* LDR::toJson(int value){
@@ -54,5 +51,5 @@ char* LDR::toJson(int value){
 }
 
 String LDR::handleRoot(){
-  return "yes";
+  return String(analogRead(sensorPin));
 }

@@ -37,6 +37,7 @@ void BaseDevice::heartbeat(){
   }
 }
 
+//need to rewrite recursion into while loops. Stack might overflow!
 void BaseDevice::sendPulse(){
   if(WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
@@ -60,14 +61,14 @@ void BaseDevice::sendPulse(){
       }
       else {
         Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
-        if(retryPulseCount < 10){
-        Serial.printf("Retrying..");
-        retryPulseCount++;
-        sendPulse();
+        if(retryPulseCount < 3){
+          Serial.printf("Retrying..");
+          retryPulseCount++;
+          sendPulse();
         }
-      else{
-        Serial.printf("Max retry count reached");
-        retryPulseCount = 0;
+        else{
+          Serial.printf("Max retry count reached");
+          retryPulseCount = 0;
         }
       }
     http.end();
@@ -93,7 +94,7 @@ void BaseDevice::sendValue(char* value){
     }
     else {
       Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
-      if(retryValueCount < 10){
+      if(retryValueCount < 3){
         Serial.printf("Retrying..");
         retryValueCount++;
         sendValue(value);
@@ -170,13 +171,20 @@ void BaseDevice::getConfig(){
 }
 
 void BaseDevice::handleRoot(){
-    server->send(200, "text/html", String("Up!"));
+  Serial.print(server->arg("id"));
+  for(Sensor* s: vec){
+    if(s->id == server->arg("id").toInt()){
+      server->send(200, "text/html", s->handleRoot());
+      return;
+    }
+  }
+  server->send(200, "text/html", String("Up!"));
 }
 
 void BaseDevice::handleReset(){
-    server->send(200, "text/html", String("Resetting..."));
-    delay(2000);
-    resetFunc();
+  server->send(200, "text/html", String("Resetting..."));
+  delay(2000);
+  resetFunc();
 }
 
 void BaseDevice::handleSensors(){
