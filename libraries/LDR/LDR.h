@@ -10,7 +10,7 @@ private:
         int sensorPin;
         unsigned long previousMillis;
         unsigned long sensorDelay; //in mills
-        char currentState;
+        bool wasHigh;
         BaseDevice* bd;
         int maxThreshold;
         int minThreshold;
@@ -18,7 +18,7 @@ public:
         LDR(BaseDevice* bd, int id, int pin);
         void execute();
         void setConfig(JsonObject& doc);
-        char* toJson(int value);
+        String toJson(int value);
         String handleRoot();
 };
  

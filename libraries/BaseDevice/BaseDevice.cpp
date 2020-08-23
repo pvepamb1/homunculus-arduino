@@ -2,6 +2,10 @@
 
 void(* resetFunc) (void) = 0;
 
+const char* HEARTBEAT_URL = "/api/heartbeat";
+const char* SENSOR_URL = "/api/sensors";
+const char* endpoints[2] = {HEARTBEAT_URL, SENSOR_URL};
+
 BaseDevice::BaseDevice(const char* ssid, const char* password, String serverIp){
 
   Serial.begin(9600);
@@ -18,10 +22,12 @@ BaseDevice::BaseDevice(const char* ssid, const char* password, String serverIp){
 void BaseDevice::connectToWiFi(){
   WiFi.begin(ssid, password);
   Serial.println("");
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
@@ -31,79 +37,52 @@ void BaseDevice::connectToWiFi(){
 
 void BaseDevice::heartbeat(){
   if((millis() - previousMillis) >= heartbeatDelay){
-    previousMillis = millis();
-    Serial.println("sending pulse");
-    sendPulse();
-  }
-}
-
-//need to rewrite recursion into while loops. Stack might overflow!
-void BaseDevice::sendPulse(){
-  if(WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    Serial.println("sending to: " +serverIp + "/api/heartbeat");
-    http.begin(serverIp + "/api/heartbeat");
-    http.addHeader("Content-Type", "application/json");
+    Serial.println("\n----------BEGIN HEARTBEAT----------\n");
+    
     const int capacity = JSON_OBJECT_SIZE(2) + 37;
     StaticJsonDocument<capacity> doc;
     doc["mac"]=WiFi.macAddress();
     doc["ip"]=WiFi.localIP().toString();
     char output[128];
     serializeJson(doc, output);
-    int httpCode = http.POST(output);
-      if(httpCode > 0) {
-        Serial.printf("HTTP code: %d\n", httpCode);
-        if(httpCode == HTTP_CODE_OK) {
-          String payload = http.getString();
-          Serial.println(payload);
-          retryPulseCount = 0;
-        }
-      }
-      else {
-        Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
-        if(retryPulseCount < 3){
-          Serial.printf("Retrying..");
-          retryPulseCount++;
-          sendPulse();
-        }
-        else{
-          Serial.printf("Max retry count reached");
-          retryPulseCount = 0;
-        }
-      }
-    http.end();
-  }
-  else{
-    connectToWiFi();
+
+    send(0, String(output));
+
+    previousMillis = millis();
+
+    Serial.println("\n----------END HEARTBEAT----------");
   }
 }
 
-void BaseDevice::sendValue(char* value){
+void BaseDevice::send(int urlArrayIndex, String payload){ //couldn't make payload char* since it was going out of scope
+
+  const char* endPoint = endpoints[urlArrayIndex];
+
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.begin(serverIp + "/api/sensors");
+    http.begin(serverIp + endPoint);
     http.addHeader("Content-Type", "application/json");
-    int httpCode = http.POST(value);
+    int httpCode = http.POST(payload);
+
+    Serial.println(payload);
+
+    while(httpCode < 0 && retryCount < 3){
+      Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
+      Serial.println("Retrying..");
+      retryCount++;
+      httpCode = http.POST(payload);
+    }
+
+    if(retryCount >= 3){
+      Serial.println("Max retry count reached");
+    }
+
+    retryCount = 0;
+    
     if (httpCode > 0) {
       Serial.printf("HTTP code: %d\n", httpCode);
-      if (httpCode == HTTP_CODE_OK) {
-        String payload = http.getString();
-        Serial.println(payload);
-        retryValueCount = 0;
-      }
     }
-    else {
-      Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
-      if(retryValueCount < 3){
-        Serial.printf("Retrying..");
-        retryValueCount++;
-        sendValue(value);
-        }
-      else{
-        Serial.printf("Max retry count reached");
-        retryValueCount = 0;
-        }
-    }
+
     http.end();
   }
   else {
@@ -128,25 +107,30 @@ void BaseDevice::getConfig(){
   serializeJson(doc, output);
   int httpCode = 0;
 
+  Serial.println("\n----------BEGIN CONFIG----------\n");
+
   do{
     if(WiFi.status() == WL_CONNECTED) {
       HTTPClient http;
-      Serial.println("sending to: " +serverIp + "/api/sensors/config");
+      Serial.println("sending to: " + serverIp + "/api/sensors/config");
       http.begin(serverIp + "/api/sensors/config");
       http.addHeader("Content-Type", "application/json");
 
-      Serial.print(output);
-
+      Serial.printf("Config request: %s\n", output);
+      Serial.println("Config response:");
       httpCode = http.POST(output);
+
       if(httpCode > 0) {
         Serial.printf("HTTP code: %d\n", httpCode);
         if(httpCode == HTTP_CODE_OK) {
           String payload = http.getString();
           Serial.println(payload);
+
           const size_t capacity2 = JSON_ARRAY_SIZE(2) + 2*JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(5) + 140; //needs to be abstracted
           DynamicJsonDocument doc2(capacity2);
           deserializeJson(doc2, payload);
           JsonArray arr = doc2.as<JsonArray>();
+
           for(Sensor* s: vec){
             for (JsonObject value : arr) {
               if(s->id == atoi(value["id"]["id"]))
@@ -158,7 +142,7 @@ void BaseDevice::getConfig(){
       else {
         Serial.printf("HTTP failed, error: %s\n", http.errorToString(httpCode).c_str());
       }
-      
+
       http.end();
     }
     else{
@@ -168,6 +152,8 @@ void BaseDevice::getConfig(){
           delay(10000);
       }
   }while (httpCode != HTTP_CODE_OK);
+
+  Serial.println("\n----------END CONFIG----------");
 }
 
 void BaseDevice::handleRoot(){

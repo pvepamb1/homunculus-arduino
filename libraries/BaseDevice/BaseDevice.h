@@ -18,16 +18,14 @@ class BaseDevice{
         unsigned long previousMillis = 0;
         unsigned long heartbeatDelay = 10000;
         std::vector<Sensor*> vec;
-        int retryPulseCount = 0;
-        int retryValueCount = 0;
+        int retryCount = 0;
         
   public:
         ESP8266WebServer* server;
         BaseDevice(const char* ssid, const char* password, String serverIp);
-        void heartbeat();
         void connectToWiFi();
-        void sendPulse();
-        void sendValue(char* value);
+        void heartbeat();
+        void send(int urlArrayIndex, String payload);
         void handleRoot();
         void handleReset();
         void handleSensors();

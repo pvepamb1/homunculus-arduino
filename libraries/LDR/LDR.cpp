@@ -3,51 +3,52 @@
 LDR::LDR(BaseDevice* bd, int id, int pin){
   
   sensorPin = pin;     
-  this->sensorDelay = 10000;
   previousMillis = 0;
   this->bd = bd;
   this->id = id;
-  this->currentState = 'N';
-  this->maxThreshold = 600;
-  this->minThreshold = 200;
 }
 
 void LDR::execute(){
   if ((millis() - previousMillis) > sensorDelay) {
+    Serial.println("\n----------BEGIN SENSOR----------\n");
     previousMillis = millis();
     int value = analogRead(sensorPin);
-    Serial.println(value);
-    if (value > 600) {
-      Serial.println("Updating state to ON");
-      currentState = 'Y';
+    Serial.printf("Sensor with ID: %d has value: %d\n", id, value);
+
+    if (value > maxThreshold && !wasHigh) {
+      Serial.println("\nUpdating state to ON");
+      wasHigh = true;
       Serial.println("Sending value");
-      bd->sendValue(toJson(value));
+      bd->send(1, toJson(value));
     }
-    else if (value < 200 && currentState == 'Y') {
-      Serial.println("Updating state to OFF");
-      currentState = 'N';
+
+    else if (value < minThreshold && wasHigh) {
+      Serial.println("\nUpdating state to OFF");
+      wasHigh = false;
       Serial.println("Sending value");
-      bd->sendValue(toJson(value));
+      bd->send(1, toJson(value));
     }
+
+    Serial.println("\n----------END SENSOR----------");
   }
 }
 
 void LDR::setConfig(JsonObject& doc){
-  this->minThreshold = doc["minThreshold"]; // 200
-  this->maxThreshold = doc["maxThreshold"]; // 600
-  this->currentState = doc["currentState"]; // "N"
-  this->sensorDelay = doc["sensorDelay"]; // 10000
+  this->minThreshold = doc["minThreshold"];
+  this->maxThreshold = doc["maxThreshold"];
+  this->wasHigh = doc["wasHigh"];
+  this->sensorDelay = doc["sensorDelay"];
 }
 
-char* LDR::toJson(int value){
-   const int capacity = JSON_OBJECT_SIZE(3);
+String LDR::toJson(int value){
+   const int capacity = JSON_OBJECT_SIZE(3) + 100;
    StaticJsonDocument<capacity> doc;
    doc["mac"]=WiFi.macAddress();
-   doc["id"]="1";
+   doc["id"]=id;
    doc["value"] = value;
    char output[128];
    serializeJson(doc, output);
-   return output;
+   return String(output);
 }
 
 String LDR::handleRoot(){
