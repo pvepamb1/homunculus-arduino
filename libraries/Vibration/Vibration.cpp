@@ -1,13 +1,13 @@
-#include "LDR.h"
+#include "Vibration.H"
 
-LDR::LDR(BaseDevice* bd, int id, int pin){
+Vibration::Vibration(BaseDevice* bd, int id, int pin){
   sensorPin = pin;     
   previousMillis = 0;
   this->bd = bd;
   this->id = id;
 }
 
-void LDR::execute(){
+void Vibration::execute(){
   if ((millis() - previousMillis) > sensorDelay) {
     Serial.println("\n----------BEGIN SENSOR----------\n");
     previousMillis = millis();
@@ -32,14 +32,14 @@ void LDR::execute(){
   }
 }
 
-void LDR::setConfig(JsonObject& doc){
+void Vibration::setConfig(JsonObject& doc){
   this->minThreshold = doc["minThreshold"];
   this->maxThreshold = doc["maxThreshold"];
   this->wasHigh = doc["wasHigh"];
   this->sensorDelay = doc["sensorDelay"];
 }
 
-String LDR::toJson(int value){
+String Vibration::toJson(int value){
    const int capacity = JSON_OBJECT_SIZE(3) + 100;
    StaticJsonDocument<capacity> doc;
    doc["mac"]=WiFi.macAddress();
